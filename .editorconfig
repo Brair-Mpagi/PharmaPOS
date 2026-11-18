@@ -1,0 +1,139 @@
+# =============================================================================
+# PharmaPOS .editorconfig
+# Enforces consistent coding style across Java, TypeScript, SQL, YAML, Markdown
+# and all other text files in the monorepo.
+# =============================================================================
+
+# Top of the monorepo — applies to every file unless overridden below.
+root = true
+
+# -----------------------------------------------------------------------------
+# Global defaults
+# -----------------------------------------------------------------------------
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# -----------------------------------------------------------------------------
+# Java (backend)
+# 4-space indent is the Google Java Style / Spring convention
+# -----------------------------------------------------------------------------
+[*.java]
+indent_style = space
+indent_size = 4
+max_line_length = 120
+
+# -----------------------------------------------------------------------------
+# Kotlin (if ever used)
+# -----------------------------------------------------------------------------
+[*.kt]
+indent_style = space
+indent_size = 4
+max_line_length = 120
+
+# -----------------------------------------------------------------------------
+# TypeScript / JavaScript / JSX / TSX (web apps)
+# 2-space indent is the standard for Next.js / React projects
+# -----------------------------------------------------------------------------
+[*.{ts,tsx,js,jsx,mjs,cjs}]
+indent_style = space
+indent_size = 2
+max_line_length = 100
+
+# -----------------------------------------------------------------------------
+# JSON
+# -----------------------------------------------------------------------------
+[*.json]
+indent_style = space
+indent_size = 2
+
+# JSONC (VS Code settings, tsconfig)
+[*.jsonc]
+indent_style = space
+indent_size = 2
+
+# -----------------------------------------------------------------------------
+# YAML (OpenAPI, docker-compose, GitHub Actions, Kubernetes manifests)
+# -----------------------------------------------------------------------------
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+max_line_length = 120
+
+# -----------------------------------------------------------------------------
+# SQL (Flyway migration scripts, init scripts)
+# -----------------------------------------------------------------------------
+[*.sql]
+indent_style = space
+indent_size = 4
+max_line_length = 120
+
+# -----------------------------------------------------------------------------
+# Markdown (ADRs, READMEs, documentation)
+# Do NOT trim trailing whitespace — two trailing spaces = intentional line break
+# -----------------------------------------------------------------------------
+[*.md]
+indent_style = space
+indent_size = 2
+trim_trailing_whitespace = false
+max_line_length = off
+
+# -----------------------------------------------------------------------------
+# TOML (Cargo, some config files)
+# -----------------------------------------------------------------------------
+[*.toml]
+indent_style = space
+indent_size = 2
+
+# -----------------------------------------------------------------------------
+# Properties files (Spring Boot application.properties)
+# -----------------------------------------------------------------------------
+[*.properties]
+indent_style = space
+indent_size = 4
+
+# -----------------------------------------------------------------------------
+# Shell scripts
+# -----------------------------------------------------------------------------
+[*.{sh,bash}]
+indent_style = space
+indent_size = 2
+
+# -----------------------------------------------------------------------------
+# Dockerfile
+# -----------------------------------------------------------------------------
+[Dockerfile]
+indent_style = space
+indent_size = 4
+
+[Dockerfile.*]
+indent_style = space
+indent_size = 4
+
+# -----------------------------------------------------------------------------
+# XML (Maven POMs, Spring config if any)
+# -----------------------------------------------------------------------------
+[*.xml]
+indent_style = space
+indent_size = 4
+
+# -----------------------------------------------------------------------------
+# Gradle build files (Groovy DSL)
+# -----------------------------------------------------------------------------
+[*.gradle]
+indent_style = space
+indent_size = 4
+
+# Gradle Kotlin DSL
+[*.gradle.kts]
+indent_style = space
+indent_size = 4
+
+# -----------------------------------------------------------------------------
+# EditorConfig itself
+# -----------------------------------------------------------------------------
+[.editorconfig]
+indent_style = space
+indent_size = 2

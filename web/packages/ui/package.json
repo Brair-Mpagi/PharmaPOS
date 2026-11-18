@@ -1,0 +1,45 @@
+{
+  "name": "@pharmapos/ui",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./button": "./src/components/Button.tsx",
+    "./input": "./src/components/Input.tsx",
+    "./badge": "./src/components/Badge.tsx",
+    "./card": "./src/components/Card.tsx",
+    "./dialog": "./src/components/Dialog.tsx",
+    "./table": "./src/components/Table.tsx",
+    "./pagination": "./src/components/Pagination.tsx",
+    "./money-display": "./src/components/MoneyDisplay.tsx",
+    "./quantity-input": "./src/components/QuantityInput.tsx",
+    "./barcode-display": "./src/components/BarcodeDisplay.tsx",
+    "./status-badge": "./src/components/StatusBadge.tsx"
+  },
+  "scripts": {
+    "lint": "eslint src/",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "clean": "rm -rf dist"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@pharmapos/config": "workspace:*",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0"
+  },
+  "dependencies": {
+    "@radix-ui/react-dialog": "^1.1.0",
+    "@radix-ui/react-slot": "^1.1.0",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.0",
+    "lucide-react": "^0.468.0",
+    "tailwind-merge": "^2.5.0"
+  }
+}

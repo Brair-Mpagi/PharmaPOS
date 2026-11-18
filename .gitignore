@@ -1,0 +1,221 @@
+# =============================================================================
+# PharmaPOS .gitignore
+# Covers: Java/Gradle, Node/Next.js, IntelliJ IDEA, VS Code, macOS, Linux,
+#         Docker secrets, and project-specific generated artefacts.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Java / JVM
+# -----------------------------------------------------------------------------
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+*.zip
+*.tar.gz
+*.rar
+hs_err_pid*
+replay_pid*
+
+# -----------------------------------------------------------------------------
+# Gradle
+# -----------------------------------------------------------------------------
+.gradle/
+**/build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+gradle-app.setting
+!gradle-wrapper.jar
+!**/gradle-wrapper.properties
+.gradletasknamecache
+
+# Maven (if ever used)
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# -----------------------------------------------------------------------------
+# Spring Boot
+# -----------------------------------------------------------------------------
+# Local override files — never commit credentials
+application-local.properties
+application-local.yml
+application-local.yaml
+
+# -----------------------------------------------------------------------------
+# Node / npm / pnpm / yarn
+# -----------------------------------------------------------------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.npm
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+package-lock.json.tmp
+
+# -----------------------------------------------------------------------------
+# Next.js
+# -----------------------------------------------------------------------------
+web/*/.next/
+web/*/out/
+web/*/.swc/
+web/*/next-env.d.ts
+
+# Vercel
+.vercel
+
+# TurboRepo
+.turbo/
+
+# -----------------------------------------------------------------------------
+# TypeScript
+# -----------------------------------------------------------------------------
+*.tsbuildinfo
+
+# -----------------------------------------------------------------------------
+# Testing & coverage
+# -----------------------------------------------------------------------------
+coverage/
+.nyc_output/
+**/test-results/
+**/surefire-reports/
+**/failsafe-reports/
+jacoco.exec
+*.lcov
+
+# -----------------------------------------------------------------------------
+# Environment files — NEVER commit real secrets
+# -----------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+!**/.env.example
+*.env.local
+*.env.development.local
+*.env.test.local
+*.env.production.local
+
+# -----------------------------------------------------------------------------
+# Docker
+# -----------------------------------------------------------------------------
+infra/docker/.env
+# (the .env.example is committed — secrets are not)
+
+# -----------------------------------------------------------------------------
+# IDE — IntelliJ IDEA
+# -----------------------------------------------------------------------------
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+.idea_modules/
+atlassian-ide-plugin.xml
+com_crashlytics_export_strings.xml
+crashlytics.properties
+crashlytics-build.properties
+fabric.properties
+
+# -----------------------------------------------------------------------------
+# IDE — VS Code
+# -----------------------------------------------------------------------------
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json.example
+
+# -----------------------------------------------------------------------------
+# IDE — Eclipse
+# -----------------------------------------------------------------------------
+.eclipse/
+.classpath
+.project
+.settings/
+bin/
+
+# -----------------------------------------------------------------------------
+# macOS
+# -----------------------------------------------------------------------------
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# -----------------------------------------------------------------------------
+# Linux
+# -----------------------------------------------------------------------------
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# -----------------------------------------------------------------------------
+# Windows
+# -----------------------------------------------------------------------------
+Thumbs.db
+Thumbs.db:encryptableAttributes
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# -----------------------------------------------------------------------------
+# Generated / build artefacts
+# -----------------------------------------------------------------------------
+# OpenAPI generated clients
+contracts/generated/
+backend/**/generated-sources/openapi/
+web/**/src/generated/
+
+# Flyway state (not the scripts themselves)
+backend/**/.flyway/
+
+# BLN installer build output
+installer/build/
+installer/dist/
+
+# -----------------------------------------------------------------------------
+# Logs
+# -----------------------------------------------------------------------------
+logs/
+*.log
+*.log.*
+
+# -----------------------------------------------------------------------------
+# Temporary / scratch
+# -----------------------------------------------------------------------------
+tmp/
+temp/
+*.tmp
+*.bak
+*.swp
+*.swo
+*#
