@@ -16,8 +16,8 @@ Monorepo: Spring Boot 4 modular-monolith backend + 3 Next.js apps + BLN edge nod
 
 | Phase | Name | Status |
 |-------|------|--------|
-| P0 | Monorepo scaffold & tooling | 🔄 In Progress |
-| P1 | Core domain modules (Catalogue, Inventory, Sales) | ⏳ Queued |
+| P0 | Monorepo scaffold & tooling | ✅ Done |
+| P1 | Core domain modules (Catalogue, Inventory, Sales) | 🔄 In Progress |
 | P2 | Multi-tenancy, RLS, Identity/IAM | ✅ Done |
 | P3 | POS Terminal (Next.js PWA, offline) | ⏳ Queued |
 | P4 | Branch Local Node (BLN) + Sync gateway | ⏳ Queued |
@@ -36,14 +36,14 @@ Monorepo: Spring Boot 4 modular-monolith backend + 3 Next.js apps + BLN edge nod
 
 | # | Task | Owner | Status | Notes |
 |---|------|-------|--------|-------|
-| 0.1 | Root monorepo structure (`contracts/`, `backend/`, `web/`, `installer/`, `infra/`, `docs/`) | scaffold | ⏳ | |
-| 0.2 | Gradle multi-project build (Java 25, Spring Boot 4.1) | backend-scaffold | ⏳ | |
-| 0.3 | ADR documents (001–017) | docs | ⏳ | |
-| 0.4 | OpenAPI contract skeleton (all endpoint groups) | contracts | ⏳ | |
-| 0.5 | Flyway migrations bootstrap + RLS helper | db | ⏳ | |
-| 0.6 | Docker Compose dev environment (PostgreSQL, Keycloak, Redis) | infra | ⏳ | |
-| 0.7 | Next.js workspace (terminal, backoffice, platform) with shared packages | frontend-scaffold | ⏳ | |
-| 0.8 | CI/CD pipeline definition (GitHub Actions / build config) | ci | ⏳ | |
+| 0.1 | Root monorepo structure (`contracts/`, `backend/`, `web/`, `installer/`, `infra/`, `docs/`) | scaffold | ✅ | Complete |
+| 0.2 | Gradle multi-project build (Java 25, Spring Boot 4.1) | backend-scaffold | ✅ | With wrapper |
+| 0.3 | ADR documents (001–017) | docs | 🔄 | Key ADRs created (001, 002, 014) |
+| 0.4 | OpenAPI contract skeleton (all endpoint groups) | contracts | ✅ | Catalogue, Inventory, Sales endpoints |
+| 0.5 | Flyway migrations bootstrap + RLS helper | db | ✅ | Identity module V001 migration |
+| 0.6 | Docker Compose dev environment (PostgreSQL, Keycloak, Redis) | infra | ✅ | Full stack with MinIO, MailHog |
+| 0.7 | Next.js workspace (terminal, backoffice, platform) with shared packages | frontend-scaffold | 🔄 | Structure exists, implementations pending |
+| 0.8 | CI/CD pipeline definition (GitHub Actions / build config) | ci | ⏳ | TODO |
 
 ---
 
@@ -137,6 +137,7 @@ Monorepo: Spring Boot 4 modular-monolith backend + 3 Next.js apps + BLN edge nod
 | 2026-11-18 18:48 | Project scoped from TDD; status.md created |
 | 2026-11-18 18:48 | Swarm launched — P0 scaffold workers started |
 | 2026-11-19 14:28 | P2 complete — Multitenancy + IAM + Security layer: 48 Java files + 1 SQL migration |
+| 2026-11-19 16:45 | P0 complete — Infrastructure, contracts, shared-kernel, app configuration, ADRs, QUICKSTART guide |
 
 ---
 

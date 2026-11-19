@@ -1,0 +1,793 @@
+openapi: 3.1.0
+info:
+  title: PharmaPOS Enterprise API
+  version: 1.0.0
+  description: |
+    Multi-tenant pharmacy management platform API
+    
+    ## Authentication
+    All endpoints require Bearer token authentication via Keycloak OIDC.
+    
+    ## Multi-tenancy
+    Tenant is identified by subdomain in the request host.
+    The token must match the tenant subdomain.
+    
+    ## Idempotency
+    Mutating operations accept an `Idempotency-Key` header (UUIDv7).
+    
+    ## Versioning
+    Major version in path (`/api/v1/`). Additive changes only within major version.
+  contact:
+    name: PharmaPOS Engineering
+    email: engineering@pharmapos.com
+  license:
+    name: Proprietary
+    url: https://pharmapos.com/license
+
+servers:
+  - url: https://{tenant}.pharmapos.com/api/v1
+    description: Production (Multi-tenant)
+    variables:
+      tenant:
+        default: demo
+        description: Tenant identifier
+  - url: http://localhost:8081/api/v1
+    description: Local development
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Catalogue
+    description: Product and pricing management
+  - name: Inventory
+    description: Stock batches, movements, and balancing
+  - name: Sales
+    description: POS operations, shifts, and payments
+  - name: Clinical
+    description: Prescriptions and dispensing
+  - name: Procurement
+    description: Purchase orders and goods receiving
+  - name: Finance
+    description: Financial operations and reconciliation
+  - name: Customers
+    description: Customer and patient management
+  - name: Reporting
+    description: Reports and analytics
+  - name: Identity
+    description: Users, roles, and devices
+  - name: Sync
+    description: Branch synchronization (device only)
+  - name: Platform
+    description: Tenant and subscription management (platform realm)
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      description: UUIDv7 for idempotent operations
+      required: true
+      schema:
+        type: string
+        format: uuid
+    
+    IfMatch:
+      name: If-Match
+      in: header
+      description: ETag for optimistic locking
+      required: true
+      schema:
+        type: string
+    
+    PageCursor:
+      name: cursor
+      in: query
+      description: Cursor for pagination
+      schema:
+        type: string
+    
+    PageSize:
+      name: pageSize
+      in: query
+      description: Number of items per page (max 100)
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
+  schemas:
+    # Common Types
+    Money:
+      type: object
+      required: [amountMinor, currency]
+      properties:
+        amountMinor:
+          type: integer
+          format: int64
+          description: Amount in minor units (cents for USD, shillings for UGX)
+        currency:
+          type: string
+          minLength: 3
+          maxLength: 3
+          example: UGX
+    
+    Quantity:
+      type: object
+      required: [value, unit]
+      properties:
+        value:
+          type: number
+          format: decimal
+          description: Quantity in base units
+        unit:
+          type: string
+          description: Unit of measure
+          example: TAB
+    
+    ErrorResponse:
+      type: object
+      required: [code, message, traceId]
+      properties:
+        code:
+          type: string
+          description: Machine-readable error code
+          example: INSUFFICIENT_STOCK
+        message:
+          type: string
+          description: Human-readable error message
+        details:
+          type: object
+          additionalProperties: true
+        traceId:
+          type: string
+          format: uuid
+          description: Trace ID for debugging
+    
+    PageInfo:
+      type: object
+      properties:
+        nextCursor:
+          type: string
+          nullable: true
+        hasMore:
+          type: boolean
+        totalCount:
+          type: integer
+          format: int64
+    
+    # Catalogue Types
+    SellableItem:
+      type: object
+      required: [id, tenantId, name, baseUnit, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        genericName:
+          type: string
+          nullable: true
+        activeIngredient:
+          type: string
+          nullable: true
+        strength:
+          type: string
+          nullable: true
+        baseUnit:
+          type: string
+          example: TAB
+        requiresPrescription:
+          type: boolean
+        isControlled:
+          type: boolean
+        status:
+          type: string
+          enum: [ACTIVE, DISCONTINUED, SUSPENDED]
+        taxClassId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        version:
+          type: integer
+          format: int64
+    
+    Barcode:
+      type: object
+      required: [code, sellableItemId, type]
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        sellableItemId:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [GTIN, EAN13, EAN8, UPC, CODE128, INTERNAL]
+        isActive:
+          type: boolean
+    
+    # Inventory Types
+    StockBatch:
+      type: object
+      required: [id, tenantId, branchId, sellableItemId, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        branchId:
+          type: string
+          format: uuid
+        sellableItemId:
+          type: string
+          format: uuid
+        batchNumber:
+          type: string
+        expiryDate:
+          type: string
+          format: date
+        supplierId:
+          type: string
+          format: uuid
+        unitCost:
+          $ref: '#/components/schemas/Money'
+        status:
+          type: string
+          enum: [AVAILABLE, RESERVED, QUARANTINED, EXPIRED, RECALLED, DAMAGED]
+        quantityOnHand:
+          $ref: '#/components/schemas/Quantity'
+        quantityReserved:
+          $ref: '#/components/schemas/Quantity'
+    
+    StockMovement:
+      type: object
+      required: [id, tenantId, branchId, batchId, movementType, quantityDelta, occurredAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        branchId:
+          type: string
+          format: uuid
+        batchId:
+          type: string
+          format: uuid
+        movementType:
+          type: string
+          enum: [RECEIPT, SALE, RETURN, TRANSFER_OUT, TRANSFER_IN, ADJUSTMENT, DAMAGE, LOSS, EXPIRY_WRITE_OFF, QUARANTINE, RELEASE]
+        quantityDelta:
+          $ref: '#/components/schemas/Quantity'
+        sourceDocType:
+          type: string
+        sourceDocId:
+          type: string
+          format: uuid
+        reasonCode:
+          type: string
+          nullable: true
+        note:
+          type: string
+          nullable: true
+        occurredAt:
+          type: string
+          format: date-time
+        recordedAt:
+          type: string
+          format: date-time
+    
+    # Sales Types
+    Sale:
+      type: object
+      required: [id, tenantId, branchId, status, total]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        branchId:
+          type: string
+          format: uuid
+        shiftId:
+          type: string
+          format: uuid
+        deviceId:
+          type: string
+          format: uuid
+        receiptNumber:
+          type: string
+        idempotencyKey:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [DRAFT, SUSPENDED, COMPLETED, VOIDED]
+        total:
+          $ref: '#/components/schemas/Money'
+        tax:
+          $ref: '#/components/schemas/Money'
+        discount:
+          $ref: '#/components/schemas/Money'
+        customerId:
+          type: string
+          format: uuid
+          nullable: true
+        prescriptionId:
+          type: string
+          format: uuid
+          nullable: true
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/SaleLine'
+        payments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Payment'
+        createdAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+    
+    SaleLine:
+      type: object
+      required: [id, saleId, sellableItemId, batchId, quantity, unitPrice]
+      properties:
+        id:
+          type: string
+          format: uuid
+        saleId:
+          type: string
+          format: uuid
+        sellableItemId:
+          type: string
+          format: uuid
+        batchId:
+          type: string
+          format: uuid
+        unit:
+          type: string
+        quantity:
+          $ref: '#/components/schemas/Quantity'
+        unitPrice:
+          $ref: '#/components/schemas/Money'
+        unitCost:
+          $ref: '#/components/schemas/Money'
+        taxClass:
+          type: string
+        lineDiscount:
+          $ref: '#/components/schemas/Money'
+        overrideReason:
+          type: string
+          nullable: true
+    
+    Payment:
+      type: object
+      required: [id, saleId, method, amount, state]
+      properties:
+        id:
+          type: string
+          format: uuid
+        saleId:
+          type: string
+          format: uuid
+        method:
+          type: string
+          enum: [CASH, MOBILE_MONEY, CARD, CREDIT]
+        amount:
+          $ref: '#/components/schemas/Money'
+        state:
+          type: string
+          enum: [PENDING, CONFIRMED, FAILED, REVERSED]
+        providerReference:
+          type: string
+          nullable: true
+        confirmedAt:
+          type: string
+          format: date-time
+          nullable: true
+    
+    Shift:
+      type: object
+      required: [id, tenantId, branchId, deviceId, status, openedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        branchId:
+          type: string
+          format: uuid
+        deviceId:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [OPEN, CLOSED]
+        openedAt:
+          type: string
+          format: date-time
+        closedAt:
+          type: string
+          format: date-time
+          nullable: true
+        openingCash:
+          $ref: '#/components/schemas/Money'
+        closingCash:
+          $ref: '#/components/schemas/Money'
+          nullable: true
+        expectedCash:
+          $ref: '#/components/schemas/Money'
+          nullable: true
+        variance:
+          $ref: '#/components/schemas/Money'
+          nullable: true
+
+paths:
+  # Health Check
+  /health:
+    get:
+      tags: [System]
+      summary: Health check endpoint
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: UP
+  
+  # Catalogue Endpoints
+  /catalogue/items:
+    get:
+      tags: [Catalogue]
+      summary: Search sellable items
+      operationId: searchItems
+      parameters:
+        - name: query
+          in: query
+          schema:
+            type: string
+        - $ref: '#/components/parameters/PageCursor'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: List of items
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SellableItem'
+                  pageInfo:
+                    $ref: '#/components/schemas/PageInfo'
+    
+    post:
+      tags: [Catalogue]
+      summary: Create sellable item
+      operationId: createItem
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SellableItem'
+      responses:
+        '201':
+          description: Item created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SellableItem'
+  
+  /catalogue/items/{itemId}:
+    get:
+      tags: [Catalogue]
+      summary: Get item by ID
+      operationId: getItem
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Item details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SellableItem'
+  
+  /catalogue/items/by-barcode/{barcode}:
+    get:
+      tags: [Catalogue]
+      summary: Resolve barcode to item
+      operationId: getItemByBarcode
+      parameters:
+        - name: barcode
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Item details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SellableItem'
+  
+  # Inventory Endpoints
+  /inventory/batches:
+    get:
+      tags: [Inventory]
+      summary: List stock batches
+      operationId: listBatches
+      parameters:
+        - name: branchId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: sellableItemId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+        - $ref: '#/components/parameters/PageCursor'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: List of batches
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/StockBatch'
+                  pageInfo:
+                    $ref: '#/components/schemas/PageInfo'
+  
+  /inventory/batches/{batchId}/quarantine:
+    post:
+      tags: [Inventory]
+      summary: Quarantine a batch
+      operationId: quarantineBatch
+      parameters:
+        - name: batchId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reasonCode]
+              properties:
+                reasonCode:
+                  type: string
+                note:
+                  type: string
+      responses:
+        '200':
+          description: Batch quarantined
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockBatch'
+  
+  # Sales Endpoints
+  /sales/shifts:
+    post:
+      tags: [Sales]
+      summary: Open a new shift
+      operationId: openShift
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [deviceId, openingCash]
+              properties:
+                deviceId:
+                  type: string
+                  format: uuid
+                openingCash:
+                  $ref: '#/components/schemas/Money'
+      responses:
+        '201':
+          description: Shift opened
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shift'
+  
+  /sales/shifts/{shiftId}/close:
+    post:
+      tags: [Sales]
+      summary: Close a shift
+      operationId: closeShift
+      parameters:
+        - name: shiftId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [closingCash]
+              properties:
+                closingCash:
+                  $ref: '#/components/schemas/Money'
+      responses:
+        '200':
+          description: Shift closed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shift'
+  
+  /sales/sales:
+    post:
+      tags: [Sales]
+      summary: Create and finalize a sale
+      operationId: finalizeSale
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [shiftId, lines, payments]
+              properties:
+                shiftId:
+                  type: string
+                  format: uuid
+                customerId:
+                  type: string
+                  format: uuid
+                  nullable: true
+                prescriptionId:
+                  type: string
+                  format: uuid
+                  nullable: true
+                lines:
+                  type: array
+                  items:
+                    type: object
+                    required: [sellableItemId, quantity]
+                    properties:
+                      sellableItemId:
+                        type: string
+                        format: uuid
+                      quantity:
+                        $ref: '#/components/schemas/Quantity'
+                      batchIdOverride:
+                        type: string
+                        format: uuid
+                        nullable: true
+                      overrideReason:
+                        type: string
+                        nullable: true
+                payments:
+                  type: array
+                  items:
+                    type: object
+                    required: [method, amount]
+                    properties:
+                      method:
+                        type: string
+                        enum: [CASH, MOBILE_MONEY, CARD, CREDIT]
+                      amount:
+                        $ref: '#/components/schemas/Money'
+                      providerReference:
+                        type: string
+                        nullable: true
+      responses:
+        '201':
+          description: Sale completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sale'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict (e.g., insufficient stock)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  /sales/sales/{saleId}:
+    get:
+      tags: [Sales]
+      summary: Get sale by ID
+      operationId: getSale
+      parameters:
+        - name: saleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Sale details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sale'

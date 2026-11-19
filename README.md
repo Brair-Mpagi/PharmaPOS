@@ -70,6 +70,8 @@ pharmapos/
 
 ## Quick Start (Local Development)
 
+> **📘 Detailed Setup Guide:** See [QUICKSTART.md](./QUICKSTART.md) for comprehensive instructions.
+
 ### Prerequisites
 
 - Docker Desktop 4.x or Docker Engine 24+ with Compose v2
@@ -77,60 +79,52 @@ pharmapos/
 - Node.js 22 LTS (for frontend development)
 - Git
 
-### 1. Clone
+### 1. Clone and Start Infrastructure
 
 ```bash
-git clone https://github.com/your-org/pharmapos.git
-cd pharmapos
+git clone <repository-url>
+cd PharmaPOS
+
+# Start all infrastructure services
+cd infra/docker
+docker compose up -d
 ```
 
-### 2. Start infrastructure services
+This starts PostgreSQL, Keycloak, Redis, MinIO, and MailHog.
+
+### 2. Run Database Migrations
 
 ```bash
-cp infra/docker/.env.example infra/docker/.env
-# Edit .env to set secrets (see the file for guidance)
-docker compose -f infra/docker/docker-compose.yml up -d
-```
-
-This starts:
-- **PostgreSQL 16** on port `5432` (databases: `pharmapos_pool`, `pharmapos_platform`)
-- **Keycloak 24** on port `8080` (admin: see `.env`)
-- **Redis 7** on port `6379`
-- **MinIO** on port `9000` (console: `9001`)
-- **MailHog** on port `1025` (SMTP) / `8025` (web UI)
-
-Wait for health checks to pass:
-```bash
-docker compose -f infra/docker/docker-compose.yml ps
-```
-
-### 3. Run database migrations
-
-```bash
-# From the backend directory (once backend module exists):
+cd ../../backend
 ./gradlew :app-cloud:flywayMigrate
 ```
 
-### 4. Start the backend
+### 3. Start the Backend
 
 ```bash
 ./gradlew :app-cloud:bootRun --args='--spring.profiles.active=local'
 ```
 
-The API is available at `http://localhost:8081`. Swagger UI: `http://localhost:8081/swagger-ui.html`.
+The API is available at `http://localhost:8081`.
 
-### 5. Start a frontend
+**API Endpoints:**
+- Health: `http://localhost:8081/api/v1/health`
+- Swagger UI: `http://localhost:8081/swagger-ui.html`
+- Actuator: `http://localhost:8081/actuator/health`
+
+### 4. Start Frontend Apps (Optional)
 
 ```bash
-cd web/terminal
+cd ../web/apps/terminal
 npm install
 npm run dev
 # Terminal app → http://localhost:3000
-
-cd web/backoffice
-npm run dev
-# Back-office → http://localhost:3001
 ```
+
+**Infrastructure Access:**
+- Keycloak Admin: `http://localhost:8080` (admin/admin)
+- MinIO Console: `http://localhost:9001` (minioadmin/minioadmin123)
+- MailHog UI: `http://localhost:8025`
 
 ---
 
