@@ -1,8 +1,6 @@
 # PharmaPOS Enterprise Pharmacy Management System
 
-> **Draft v0.1 · November 2026** — Companion to the Technical Design Document (TDD) and Product, Security & Implementation Plan.
-
-A multi-tenant, offline-capable pharmacy management platform built for African markets, starting with Uganda. It serves community and institutional pharmacies with a cloud-hosted back-office and a **Branch Local Node (BLN)** that keeps every counter trading through internet outages.
+> **Draft v0.1 **
 
 ---
 
