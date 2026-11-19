@@ -21,29 +21,14 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  * - Keycloak OIDC authentication
  */
 @SpringBootApplication(scanBasePackages = {
-    "com.pharmapos.shared",
-    "com.pharmapos.platform",
-    "com.pharmapos.identity",
+    "com.pharmapos.sharedkernel",
     "com.pharmapos.catalogue",
     "com.pharmapos.inventory",
     "com.pharmapos.sales",
-    "com.pharmapos.clinical",
-    "com.pharmapos.procurement",
-    "com.pharmapos.finance",
-    "com.pharmapos.customers",
-    "com.pharmapos.reporting",
-    "com.pharmapos.notifications",
-    "com.pharmapos.sync",
     "com.pharmapos.audit",
     "com.pharmapos.cloud"
 })
-@Modulith(
-    systemName = "PharmaPOS",
-    sharedModules = "com.pharmapos.shared"
-)
 @EnableJpaAuditing
-@EnableAsync
-@EnableScheduling
 @ConfigurationPropertiesScan("com.pharmapos")
 public class PharmaPosCloudApplication {
 
