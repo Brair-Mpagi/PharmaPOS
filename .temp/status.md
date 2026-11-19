@@ -17,7 +17,7 @@ Monorepo: Spring Boot 4 modular-monolith backend + 3 Next.js apps + BLN edge nod
 | Phase | Name | Status |
 |-------|------|--------|
 | P0 | Monorepo scaffold & tooling | ✅ Done |
-| P1 | Core domain modules (Catalogue, Inventory, Sales) | 🔄 In Progress |
+| P1 | Core domain modules (Catalogue, Inventory, Sales) | 🔄 In Progress (90%) |
 | P2 | Multi-tenancy, RLS, Identity/IAM | ✅ Done |
 | P3 | POS Terminal (Next.js PWA, offline) | ⏳ Queued |
 | P4 | Branch Local Node (BLN) + Sync gateway | ⏳ Queued |
@@ -138,6 +138,7 @@ Monorepo: Spring Boot 4 modular-monolith backend + 3 Next.js apps + BLN edge nod
 | 2026-11-18 18:48 | Swarm launched — P0 scaffold workers started |
 | 2026-11-19 14:28 | P2 complete — Multitenancy + IAM + Security layer: 48 Java files + 1 SQL migration |
 | 2026-11-19 16:45 | P0 complete — Infrastructure, contracts, shared-kernel, app configuration, ADRs, QUICKSTART guide |
+| 2026-11-19 19:30 | P1 90% complete — Catalogue module 100%, Inventory module 95% with FEFO engine: ~3,500 LOC |
 
 ---
 
