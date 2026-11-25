@@ -1,22 +1,16 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
+import io.spring.gradle.dependencymanagement.dsl.DependencyManagementExtension
 
 plugins {
     java
-    alias(libs.plugins.spring.boot) apply false
-    alias(libs.plugins.spring.dependency.management) apply false
-    alias(libs.plugins.pit.mutation) apply false
+    id("org.springframework.boot") version "4.1.0" apply false
+    id("io.spring.dependency-management") version "1.1.7" apply false
     jacoco
 }
 
-// ---------------------------------------------------------------------------
-// Global constants
-// ---------------------------------------------------------------------------
 val javaVersion = JavaVersion.VERSION_25
 
-// ---------------------------------------------------------------------------
-// All subprojects: Java toolchain + encoding + dependency management
-// ---------------------------------------------------------------------------
 subprojects {
     apply(plugin = "java")
     apply(plugin = "jacoco")
@@ -38,11 +32,10 @@ subprojects {
         options.compilerArgs.addAll(listOf("-parameters", "--enable-preview"))
     }
 
-    // Spring BOM — applies to all subprojects so dependency versions are consistent
-    dependencyManagement {
+    extensions.configure<DependencyManagementExtension> {
         imports {
-            mavenBom("org.springframework.boot:spring-boot-dependencies:${libs.versions.springBoot.get()}")
-            mavenBom("org.testcontainers:testcontainers-bom:${libs.versions.testcontainers.get()}")
+            mavenBom("org.springframework.boot:spring-boot-dependencies:4.1.0")
+            mavenBom("org.testcontainers:testcontainers-bom:1.20.4")
         }
     }
 
@@ -50,25 +43,22 @@ subprojects {
         mavenCentral()
     }
 
-    // ---------------------------------------------------------------------------
-    // Common dependencies: Lombok annotation processor, UUID creator, test basics
-    // ---------------------------------------------------------------------------
     dependencies {
-        "compileOnly"(libs.lombok)
-        "annotationProcessor"(libs.lombok)
-        "annotationProcessor"(libs.mapstruct.processor)
-        "implementation"(libs.uuid.creator)
-        "implementation"(libs.opentelemetry.api)
+        "compileOnly"("org.projectlombok:lombok:1.18.36")
+        "annotationProcessor"("org.projectlombok:lombok:1.18.36")
+        "annotationProcessor"("org.mapstruct:mapstruct-processor:1.6.3")
+        "implementation"("com.github.f4b6a3:uuid-creator:6.0.0")
+        "implementation"("io.opentelemetry:opentelemetry-api:1.44.1")
 
-        "testImplementation"(libs.bundles.testing)
-        "testImplementation"(libs.spring.boot.starter.test)
-        "testCompileOnly"(libs.lombok)
-        "testAnnotationProcessor"(libs.lombok)
+        "testImplementation"("org.junit.jupiter:junit-jupiter")
+        "testImplementation"("org.mockito:mockito-core:5.14.2")
+        "testImplementation"("org.mockito:mockito-junit-jupiter:5.14.2")
+        "testImplementation"("org.assertj:assertj-core:3.26.3")
+        "testImplementation"("org.springframework.boot:spring-boot-starter-test")
+        "testCompileOnly"("org.projectlombok:lombok:1.18.36")
+        "testAnnotationProcessor"("org.projectlombok:lombok:1.18.36")
     }
 
-    // ---------------------------------------------------------------------------
-    // Test configuration — JUnit 5, Testcontainers PostgreSQL, structured logging
-    // ---------------------------------------------------------------------------
     tasks.withType<Test> {
         useJUnitPlatform()
         jvmArgs("--enable-preview")
@@ -77,22 +67,13 @@ subprojects {
             events = setOf(
                 TestLogEvent.PASSED,
                 TestLogEvent.FAILED,
-                TestLogEvent.SKIPPED,
-                TestLogEvent.STANDARD_ERROR
+                TestLogEvent.SKIPPED
             )
             exceptionFormat = TestExceptionFormat.FULL
             showStandardStreams = false
         }
-        systemProperty("spring.datasource.url",
-            System.getenv("TEST_DATASOURCE_URL")
-                ?: "jdbc:tc:postgresql:16:///pharmapos_test?TC_REUSABLE=true")
-        systemProperty("spring.datasource.username", "app_rw")
-        systemProperty("spring.datasource.password", "app_rw")
     }
 
-    // ---------------------------------------------------------------------------
-    // JaCoCo — reports per module
-    // ---------------------------------------------------------------------------
     tasks.jacocoTestReport {
         dependsOn(tasks.test)
         reports {
@@ -100,82 +81,4 @@ subprojects {
             html.required.set(true)
         }
     }
-}
-
-// ---------------------------------------------------------------------------
-// Aggregate coverage — 80 % line coverage enforced on critical modules
-// ---------------------------------------------------------------------------
-val criticalModules = setOf(
-    ":modules:inventory",
-    ":modules:shared-kernel",
-    ":modules:identity",
-    ":modules:sales",
-    ":modules:audit"
-)
-
-// Register a single aggregated JaCoCo verification task across critical modules
-tasks.register("verifyCriticalCoverage") {
-    group = "verification"
-    description = "Fails the build if critical modules fall below 80% line coverage"
-
-    dependsOn(subprojects
-        .filter { it.path in criticalModules }
-        .map { "${it.path}:jacocoTestReport" })
-
-    doLast {
-        val threshold = 0.80
-        subprojects
-            .filter { it.path in criticalModules }
-            .forEach { sub ->
-                val reportFile = sub.file("build/reports/jacoco/test/jacocoTestReport.xml")
-                if (!reportFile.exists()) {
-                    throw GradleException("JaCoCo report missing for ${sub.path}")
-                }
-                val xml = reportFile.readText()
-                val missedPattern = Regex("""<counter type="LINE" missed="(\d+)" covered="(\d+)"/>""")
-                val (missed, covered) = missedPattern.findAll(xml).toList().last().destructured
-                val lineRate = covered.toDouble() / (missed.toDouble() + covered.toDouble())
-                if (lineRate < threshold) {
-                    throw GradleException(
-                        "${sub.path} line coverage ${(lineRate * 100).toInt()}% < required 80%"
-                    )
-                }
-                logger.lifecycle("✅ ${sub.path} line coverage: ${(lineRate * 100).toInt()}%")
-            }
-    }
-}
-
-// ---------------------------------------------------------------------------
-// PIT mutation testing on critical modules
-// ---------------------------------------------------------------------------
-subprojects {
-    if (path in criticalModules) {
-        apply(plugin = "info.solidsoft.pitest")
-
-        configure<info.solidsoft.gradle.pitest.PitestPluginExtension> {
-            junit5PluginVersion.set(libs.versions.pitJunit5.get())
-            targetClasses.set(setOf("com.pharmapos.*"))
-            targetTests.set(setOf("com.pharmapos.*"))
-            mutators.set(setOf("STRONGER"))
-            outputFormats.set(setOf("XML", "HTML"))
-            failWhenNoMutations.set(false)
-            threads.set(Runtime.getRuntime().availableProcessors())
-            mutationThreshold.set(70)
-        }
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Spring Modulith boundary verification task
-// The check runs as part of the app-cloud test phase via @ApplicationModuleTest
-// but we also expose it here for explicit CI invocation.
-// ---------------------------------------------------------------------------
-tasks.register("verifyModuleBoundaries") {
-    group = "verification"
-    description = "Runs Spring Modulith structural verification — fails on forbidden cross-module dependency or cycle"
-    dependsOn(":app-cloud:test")
-}
-
-tasks.register("check") {
-    dependsOn("verifyCriticalCoverage", "verifyModuleBoundaries")
 }

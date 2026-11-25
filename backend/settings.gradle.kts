@@ -1,12 +1,7 @@
 rootProject.name = "pharmapos-backend"
 
-// Version catalog
-// Gradle 9.9.1 auto-discovers libs.versions.toml in gradle/ directory
-dependencyResolutionManagement {
-    repositories {
-        mavenCentral()
-    }
-}
+// Gradle 9+ auto-detects gradle/libs.versions.toml
+// No need for explicit versionCatalogs block
 
 // Core modules (bounded contexts)
 include(":modules:shared-kernel")
